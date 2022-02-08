@@ -1,0 +1,21 @@
+{
+    "name": "deltagestor/peeker",
+    "description": "Peeker - A framework for building automated email applications.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Deltagestor\\Peeker\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Wesley Silva",
+            "email": "wesley_silva@outlook.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^7.4 || ^8.0"
+    }
+}

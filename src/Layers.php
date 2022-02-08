@@ -7,22 +7,22 @@
 // This is like PHP6 Traits
 // https://wiki.php.net/rfc/horizontalreuse
 
-class peeker_layers
+namespace Deltagestor\Peeker;
+class Layers
 {
     private $layered_methods = array();
 
     public function layer_methods($layer_methods_object)
     {
-    	// call and register each object
+        // call and register each object
         $layer_methods_object->register($this);
 
         // list the new methods to layer
-        $methods   = get_class_methods(get_class($layer_methods_object));
+        $methods = get_class_methods(get_class($layer_methods_object));
 
-		// overwrite any previous methods
-		// bring in objects by reference
-        foreach($methods as $method_name)
-        {
+        // overwrite any previous methods
+        // bring in objects by reference
+        foreach ($methods as $method_name) {
             $this->layered_methods[$method_name] = &$layer_methods_object;
         }
         // return TRUE so it can be used in a detector circuit
@@ -32,8 +32,7 @@ class peeker_layers
     public function __call($method, $args)
     {
         // make sure the function exists
-        if(array_key_exists($method, $this->layered_methods))
-        {
+        if (array_key_exists($method, $this->layered_methods)) {
             return call_user_func_array(array($this->layered_methods[$method], $method), $args);
         }
         throw new Exception ('Call to undefined method/class function: ' . $method);
