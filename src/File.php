@@ -1,17 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Deltagestor\Peeker;
+
 /**
- *
  * Makes email body parts into objects
  * so they can be acted on by other classes
  * access data, execute detectors, etc...
  * class vars are mapped to the parts
- *
  */
 class File
 {
-
     public $filename;
     public $string;
     public $encoding;
@@ -24,7 +24,6 @@ class File
 
     /**
      * Constructor
-     *
      */
     public function __construct($assoc_array)
     {
@@ -36,7 +35,6 @@ class File
 
     /**
      * access the filename
-     *
      */
     public function get_filename()
     {
@@ -45,7 +43,6 @@ class File
 
     /**
      * access the data string
-     *
      */
     public function get_string()
     {
@@ -54,7 +51,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_encoding()
     {
@@ -63,7 +59,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_part_no()
     {
@@ -72,7 +67,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_cid()
     {
@@ -81,7 +75,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_disposition()
     {
@@ -90,7 +83,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_bytes()
     {
@@ -99,7 +91,6 @@ class File
 
     /**
      * access
-     *
      */
     public function get_type()
     {
@@ -111,7 +102,6 @@ class File
      * standardize on lowercase, shortest names
      * eg. jpg not jpeg
      * could standardize on input...
-     *
      */
     public function get_subtype()
     {
@@ -131,13 +121,11 @@ class File
      * return true if file has a cid
      * which implies that it is used
      * in HTML inline
-     *
      */
     public function has_cid()
     {
-        return (bool)$this->get_cid();
+        return (bool) $this->get_cid();
     }
-
 }
 
 // EOF

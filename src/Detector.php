@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Deltagestor\Peeker;
+
 /**
- *
  * Manage detector-callback circuits
  *
  * Any function that returns a boolean
@@ -18,55 +20,60 @@ namespace Deltagestor\Peeker;
  *
  * TODO: expand to handle arrays better
  * implement the call_user_func() version
- *
  */
 class Detector
 {
-
     public $detector_method;
     // XOR this property with
     // the check() method result
     // to invert the result
-    public $invert_detector = FALSE;
+    public $invert_detector = false;
     public $detector_method_arguments;
     public $callback_method;
     public $callback_method_arguments;
 
     public $detector_set_parent;
 
-    public $active = TRUE;
+    public $active = true;
 
     /**
      * Constructor
      * wrapper to add everything at once
      */
-    public function __construct($dm = NULL, $dma = NULL, $cm = NULL, $cma = NULL, &$detector_set_parent)
+    public function __construct($dm = null, $dma = null, $cm = null, $cma = null, &$detector_set_parent)
     {
         //if($detector_set_parent !== NULL)
-        $this->detector_set_parent =& $detector_set_parent;
+        $this->detector_set_parent = & $detector_set_parent;
         //p($this->detector_set_parent);
 
-        if ($dm !== NULL) $this->set_detector($dm);
-        if ($dma !== NULL) $this->set_detector_arguments($dma);
+        if ($dm !== null) {
+            $this->set_detector($dm);
+        }
+        if ($dma !== null) {
+            $this->set_detector_arguments($dma);
+        }
 
-        if ($cm !== NULL) $this->set_callback($cm);
-        if ($cma !== NULL) $this->set_callback_arguments($cma);
+        if ($cm !== null) {
+            $this->set_callback($cm);
+        }
+        if ($cma !== null) {
+            $this->set_callback_arguments($cma);
+        }
 
         //$this->detector_set_parent->log_array[] = 'loading detector: '.$dm;
     }
 
     /**
      * set the detector method
-     *
      */
-    public function set_detector($method)
+    public function set_detector($method): void
     {
         // magic string on detector
         // method inverts the boolean
         //p($this);
         if (strpos($method, $this->detector_set_parent->invert_detector_method_string) === 0) {
             // this check will be inverted
-            $this->invert_detector = TRUE;
+            $this->invert_detector = true;
             // trim off the string indicator
             $method = substr($method, $this->detector_set_parent->invert_detector_method_string_length);
         }
@@ -75,25 +82,22 @@ class Detector
 
     /**
      * get the detector method
-     *
      */
     public function get_detector()
     {
-        return ($this->invert_detector) ? $this->detector_set_parent->invert_detector_method_string . $this->detector_method : $this->detector_method;
+        return $this->invert_detector ? $this->detector_set_parent->invert_detector_method_string . $this->detector_method : $this->detector_method;
     }
 
     /**
      * set the detector method arguments
-     *
      */
-    public function set_detector_arguments(&$array)
+    public function set_detector_arguments(&$array): void
     {
         $this->detector_method_arguments = $array;
     }
 
     /**
      * get the detector method arguments
-     *
      */
     public function get_detector_arguments()
     {
@@ -102,16 +106,14 @@ class Detector
 
     /**
      * set the callback method
-     *
      */
-    public function set_callback($method)
+    public function set_callback($method): void
     {
         $this->callback_method = $method;
     }
 
     /**
      * get the callback method
-     *
      */
     public function get_callback()
     {
@@ -120,16 +122,14 @@ class Detector
 
     /**
      * set the callback method arguments
-     *
      */
-    public function set_callback_arguments(&$array)
+    public function set_callback_arguments(&$array): void
     {
         $this->callback_method_arguments = $array;
     }
 
     /**
      * get the callback method arguments
-     *
      */
     public function get_callback_arguments()
     {
@@ -144,9 +144,11 @@ class Detector
      */
     public function check(&$obj)
     {
-        if (!$this->active) return FALSE;
+        if (! $this->active) {
+            return false;
+        }
         // this line can target any function
-        $result = call_user_func_array(array(&$obj, $this->detector_method), array(&$this->detector_method_arguments));
+        $result = call_user_func_array([&$obj, $this->detector_method], [&$this->detector_method_arguments]);
         // XOR works like NOT here, bit 2 inverts bit 1 if bit 2 is TRUE
         // 0 XOR 0 = 0 ... normal
         // 1 XOR 0 = 1 ... normal
@@ -162,18 +164,17 @@ class Detector
      */
     public function trigger(&$obj)
     {
-        if (!$this->active) return FALSE;
+        if (! $this->active) {
+            return false;
+        }
         // this line can target any function
-        $result = call_user_func_array(array(&$obj, $this->callback_method), array(&$this->callback_method_arguments));
-        return $result;
+        return call_user_func_array([&$obj, $this->callback_method], [&$this->callback_method_arguments]);
     }
-
 
     /**
      * turn it on or off
-     *
      */
-    public function set_active($bool)
+    public function set_active($bool): void
     {
         $this->active = $bool;
     }

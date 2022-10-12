@@ -17,5 +17,14 @@
     "minimum-stability": "dev",
     "require": {
         "php": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "rector/rector": "0.14.x-dev",
+        "nunomaduro/phpinsights": "dev-master"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

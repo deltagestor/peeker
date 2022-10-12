@@ -1,7 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- *
  * Makes email body parts into array of objects
  * so they can be acted on by other classes
  * access data, execute detectors, etc...
@@ -11,25 +12,22 @@
  * also connected to peek class through peek_parent
  * so functions can talk to mail server and get
  * other items like the attachment_dir
- *
  */
 
 namespace Deltagestor\Peeker;
 
 class Parts extends Body
 {
-
-    public $parts_array = array();
+    public $parts_array = [];
     public $parts_count;
 
     // holds any files written to disk
     // by save_all_attachments() function
-    public $local_file_name_array = array();
+    public $local_file_name_array = [];
     public $local_file_name_count;
 
     /**
      * Constructor, connect to parent class
-     *
      */
     public function __construct(&$peek_parent, $imap_h_obj)
     {
@@ -40,38 +38,35 @@ class Parts extends Body
 
     /**
      * Wrapper, pass on to parent class
-     *
      */
-    public function get_parts()
+    public function get_parts(): void
     {
         $this->get_body();
     }
 
     /**
-     *
      * Parse e-mail structure into array var
      * this will handle nested parts properly
      * it will recurse and use the initial part number
      * concatenating it with nested parts using dot .
      * Useful information on type numbers and encodings
      * from http://php.net
-     *
      */
-    public function extract_parts($structure_parts_array, $part_no = NULL, $recurse_part_no = NULL)
+    public function extract_parts($structure_parts_array, $part_no = null, $recurse_part_no = null)
     {
         //pe($structure_parts_array);
         // we are in a recursion section
-        if ($part_no !== NULL) {
+        if ($part_no !== null) {
             $base_part_no = $part_no;
         }
 
         foreach ($structure_parts_array as $part_no => $part_def_obj) {
             //p($part_no);p($base_part_no);p($part_def_obj);
             // check if we are at root of tree
-            if ($recurse_part_no === NULL) {
+            if ($recurse_part_no === null) {
                 $part_no++;
             } else {
-                $part_no = ($base_part_no) . '.' . ($recurse_part_no++);
+                $part_no = $base_part_no . '.' . ($recurse_part_no++);
             }
 
             // start with part as number 1 - will this always work?
@@ -79,11 +74,9 @@ class Parts extends Body
             $part_string = imap_fetchbody($this->peek_parent->resource, $this->Msgno, $part_no);
 
             // DECODE the part if it's encoded
-            if ($part_def_obj->encoding == 3) // base64
-            {
+            if ($part_def_obj->encoding === 3) { // base64
                 $part_string = base64_decode($part_string);
-            } elseif ($part_def_obj->encoding == 4) // quoted printable
-            {
+            } elseif ($part_def_obj->encoding === 4) { // quoted printable
                 $part_string = quoted_printable_decode($part_string);
             }
             // If binary or 8bit - we don't need to decode
@@ -93,14 +86,14 @@ class Parts extends Body
 
             // type 0 is text
             // handle everything else or XML files (which are type 0, but subtype XML)
-            if ($part_def_obj->type || $sub_type == 'XML') {
+            if ($part_def_obj->type || $sub_type === 'XML') {
                 // first try dparameter value for the filename
                 // get an attachment, set filename to dparameter value
                 $filename = '';
                 if ($part_def_obj->ifdparameters && count($part_def_obj->dparameters)) {
                     foreach ($part_def_obj->dparameters as $dp) {
                         $attr = strtoupper($dp->attribute);
-                        if (($attr == 'NAME') or ($attr == 'FILENAME')) {
+                        if (($attr === 'NAME') or ($attr === 'FILENAME')) {
                             //p('dparams');p($dp);
                             $filename = $dp->value;
                             break;
@@ -109,11 +102,11 @@ class Parts extends Body
                 }
 
                 // if no filename yet, try the parameter value, maybe it's there
-                if ($filename == '') {
+                if ($filename === '') {
                     if ($part_def_obj->ifparameters && count($part_def_obj->parameters)) {
                         foreach ($part_def_obj->parameters as $p) {
                             $attr = strtoupper($p->attribute);
-                            if (($attr == 'NAME') or ($attr == 'FILENAME')) {
+                            if (($attr === 'NAME') or ($attr === 'FILENAME')) {
                                 $filename = $p->value;
                                 break;
                             }
@@ -123,15 +116,15 @@ class Parts extends Body
 
                 // store the part_def_obj id value
                 // is used as the "cid" for inline attachment display
-                $cid = (isset($part_def_obj->id)) ? $part_def_obj->id : '';
+                $cid = $part_def_obj->id ?? '';
                 //trim the tag chars to prepare it for storage
                 $cid = trim($cid, '<>');
 
                 // still no filename, last attempt
                 // check the cid, otherwise make up a filename
                 // and give it an extension from the subtype
-                if ($filename == '') {
-                    if ($cid == '') {
+                if ($filename === '') {
+                    if ($cid === '') {
                         // changed to uppercase above
                         if ($sub_type === 'DELIVERY-STATUS') {
                             // handle the DSN message see RFC 1894 for details
@@ -147,12 +140,12 @@ class Parts extends Body
                 }
 
                 // don't rely on ifdisposition, check it here
-                $disposition = (isset($part_def_obj->disposition)) ? $part_def_obj->disposition : '';
-                $bytes = (isset($part_def_obj->bytes)) ? $part_def_obj->bytes : '';
+                $disposition = $part_def_obj->disposition ?? '';
+                $bytes = $part_def_obj->bytes ?? '';
 
                 // this is a little heavy handed
                 // is there a better design for this?
-                $assoc_array = array('filename' => $filename,
+                $assoc_array = ['filename' => $filename,
                     'string' => $part_string,
                     'encoding' => $part_def_obj->encoding,
                     'part_no' => $part_no,
@@ -160,7 +153,8 @@ class Parts extends Body
                     'disposition' => $disposition,
                     'bytes' => $bytes,
                     'type' => $part_def_obj->type,
-                    'subtype' => $sub_type);
+                    'subtype' => $sub_type,
+                ];
                 // only create the object if
                 // there is a filename
                 if ($filename !== '') {
@@ -174,20 +168,21 @@ class Parts extends Body
             // it is reported as type application, subtype OCTET-STREAM
             // NOTE: text files with improper extension are not handled here!
             // they are handled above and saved with their filename
-            elseif ($part_def_obj->ifdisposition and strtoupper($part_def_obj->disposition) == 'ATTACHMENT') {
+            elseif ($part_def_obj->ifdisposition and strtoupper($part_def_obj->disposition) === 'ATTACHMENT') {
                 // the filename is assumed to be in the first array item value
                 // this may be incorrect
                 $filename = $part_def_obj->dparameters[0]->value;
 
                 // fill in the parts array, this is a bit redundant
                 // with the code a few lines above that fills in same info
-                $assoc_array = array('filename' => $filename,
+                $assoc_array = ['filename' => $filename,
                     'string' => $part_string,
                     'encoding' => $part_def_obj->encoding,
                     'part_no' => $part_no,
                     'disposition' => $part_def_obj->disposition,
                     'type' => $part_def_obj->type,
-                    'subtype' => $sub_type);
+                    'subtype' => $sub_type,
+                ];
 
                 $this->parts_array[$part_no] = new File($assoc_array);
             } // Text or HTML email INLINE (not ATTACHMENT), type is 0
@@ -219,12 +214,11 @@ class Parts extends Body
         }
         // store the count, helps determine if we have an attachment
         $this->parts_count = count($this->parts_array);
-        return TRUE;
+        return true;
     }
 
     /**
      * access the count
-     *
      */
     public function get_parts_count()
     {
@@ -233,7 +227,6 @@ class Parts extends Body
 
     /**
      * access the array
-     *
      */
     public function get_parts_array()
     {
@@ -246,29 +239,27 @@ class Parts extends Body
      * returns true if the message has
      * at least one attachment
      * looks at the parts_array to determine
-     *
      */
     public function has_attachment()
     {
-        return (bool)$this->parts_count;
+        return (bool) $this->parts_count;
     }
 
     /**
      * returns true if the message has
      * at least one attachment of dispostion
      * looks at the parts_array to determine
-     *
      */
     public function has_at_least_one_attachment_with_disposition($disp)
     {
         if ($this->has_attachment()) {
             foreach ($this->parts_array as $p) {
                 if ($p->get_disposition() === $disp) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
-        return FALSE;
+        return false;
     }
 
     /**
@@ -277,18 +268,17 @@ class Parts extends Body
      * attached or inline - only one file of subtype
      * looks at the parts_array to determine
      * subtype uses shortest indicator eg. jpg not jpeg
-     *
      */
     public function has_at_least_one_attachment($subtype)
     {
         if ($this->has_attachment()) {
             foreach ($this->parts_array as $p) {
                 if ($p->get_subtype() === $subtype) {
-                    return TRUE;
+                    return true;
                 }
             }
         }
-        return FALSE;
+        return false;
     }
 
     //---------- callbacks ---------//
@@ -297,9 +287,8 @@ class Parts extends Body
 
     /**
      * rewrites the specified string with new appended text
-     *
      */
-    public function insert_HTML($str)
+    public function insert_HTML($str): void
     {
         // going to have to fix some broken HTML here
         // to be able to insert the HTML where we want to
@@ -308,7 +297,7 @@ class Parts extends Body
         $html_f = $this->get_html_filtered();
         // make sure there are body tags around the HTML
         // before trying to replace them
-        if (strpos('</body>', $html_f) === FALSE) {
+        if (strpos('</body>', $html_f) === false) {
             $this->HTML_rewritten = $html_f . $str;
         } else {
             $this->HTML_rewritten = str_replace('</body>', $str . '</body>', $html_f);
@@ -318,27 +307,26 @@ class Parts extends Body
 
     /**
      * rewrites the specified string with new appended text
-     *
      */
-    public function insert_PLAIN($str)
+    public function insert_PLAIN($str): void
     {
         $this->PLAIN_rewritten = $this->PLAIN . $str;
         //pe($this->PLAIN_rewritten);
     }
 
-
     /**
      * rewrites the HTML string in the body HTML property
      * to point to imgs via img src URL rather than cid:
-     *
      */
-    public function rewrite_html_transform_img_tags($base_url = '')
+    public function rewrite_html_transform_img_tags($base_url = ''): void
     {
-        $cid_array = array();
-        $file_path_array = array();
+        $cid_array = [];
+        $file_path_array = [];
         foreach ($this->parts_array as $file) {
             // if we don't have an inline image, skip
-            if (($file->get_disposition() !== 'INLINE') or ($file->get_type() != 5)) continue;
+            if (($file->get_disposition() !== 'INLINE') or ($file->get_type() !== 5)) {
+                continue;
+            }
             // add in the other text that surround the inline tag
             $cid_string = 'cid:' . $file->get_cid();
             $fn = $file->get_filename();
@@ -359,21 +347,19 @@ class Parts extends Body
     /**
      * send one raw jpeg image to the browser
      * with its own header, only send the first one
-     *
      */
-    public function render_first_jpeg()
+    public function render_first_jpeg(): void
     {
         foreach ($this->parts_array as $p) {
             $sub_t = strtolower($p->subtype);
-            if ($sub_t == 'jpg' || $sub_t == 'jpeg') {
-                header("Content-Type: image/jpeg;");
+            if ($sub_t === 'jpg' || $sub_t === 'jpeg') {
+                header('Content-Type: image/jpeg;');
                 echo $p['string'];
                 // only send out the first one
-                exit();
+                exit;
             }
         }
     }
-
 
     //---------SAVE to FILE SYSTEM---------//
     // 20090415 - these could be broken out
@@ -386,7 +372,7 @@ class Parts extends Body
     /**
      * save the header string
      */
-    public function save_header_string($file_name = 'header_string.txt')
+    public function save_header_string($file_name = 'header_string.txt'): void
     {
         // if there is no immediate dir, make one from the fingerprint
         $dir = $this->_make_dir($this->peek_parent->attachment_dir . $this->get_fingerprint());
@@ -397,7 +383,7 @@ class Parts extends Body
     /**
      * save the body string
      */
-    public function save_body_string($file_name = 'body_string.txt')
+    public function save_body_string($file_name = 'body_string.txt'): void
     {
         // if there is no immediate dir, make one from the fingerprint
         $dir = $this->_make_dir($this->peek_parent->attachment_dir . $this->get_fingerprint());
@@ -408,7 +394,7 @@ class Parts extends Body
     /**
      * save the PLAIN part
      */
-    public function save_PLAIN($file_name = 'PLAIN.txt')
+    public function save_PLAIN($file_name = 'PLAIN.txt'): void
     {
         // if there is no immediate dir, make one from the fingerprint
         $dir = $this->_make_dir($this->peek_parent->attachment_dir . $this->get_fingerprint());
@@ -419,7 +405,7 @@ class Parts extends Body
     /**
      * save the HTML part
      */
-    public function save_HTML($file_name = 'HTML.html')
+    public function save_HTML($file_name = 'HTML.html'): void
     {
         // if there is no immediate dir, make one from the fingerprint
         $dir = $this->_make_dir($this->peek_parent->attachment_dir . $this->get_fingerprint());
@@ -432,16 +418,16 @@ class Parts extends Body
      * iterate the parts_array ignoring the junk
      * $dir should end in slash
      */
-    public function save_all_attachments($dir = NULL)
+    public function save_all_attachments($dir = null)
     {
         // if there is no immediate dir, make one from the fingerprint
-        if ($dir === NULL) {
+        if ($dir === null) {
             // make sure we have someplace to write the files first
             if ($att_dir = $this->peek_parent->get_attachment_dir()) {
                 $dir = $this->_make_dir($att_dir . $this->get_fingerprint());
             } else {
                 $this->log_state('attachment_dir not set yet: ' . $dir . ' not written to disk.');
-                return FALSE;
+                return false;
             }
         } else {
             $dir = $this->_make_dir($dir);
@@ -454,7 +440,9 @@ class Parts extends Body
             // don't bother saving the 'node' MIME parts
             // there may be other parts that need to be listed here
             if ($attach->get_subtype() === 'ALTERNATIVE' or
-                $attach->get_subtype() === 'RELATED') continue;
+                $attach->get_subtype() === 'RELATED') {
+                continue;
+            }
             // at this point should mainly be dealing with
             // image or text or HTML files
             // make sure the filename is not MIME encoded
@@ -470,7 +458,7 @@ class Parts extends Body
         }
         $this->local_file_name_count = count($this->local_file_name_array);
 
-        return TRUE;
+        return true;
     }
 
     /**
@@ -479,9 +467,9 @@ class Parts extends Body
      * uses array_map and glob
      * added 20110809
      */
-    public function delete_all_attachments($path = NULL)
+    public function delete_all_attachments($path = null)
     {
-        $path = ($path === NULL) ? $this->peek_parent->get_attachment_dir() . $this->get_fingerprint() : $path;
+        $path = $path === null ? $this->peek_parent->get_attachment_dir() . $this->get_fingerprint() : $path;
 
         if (is_file($path)) {
             @unlink($path);
@@ -490,10 +478,10 @@ class Parts extends Body
             // using array_map()
             // glob does not find any dot dirs . or ..
             // nor does it find 'hidden' files starting with .
-            array_map(array(&$this, 'delete_all_attachments'), glob($path . DIRECTORY_SEPARATOR . '*'));
+            array_map([&$this, 'delete_all_attachments'], glob($path . DIRECTORY_SEPARATOR . '*'));
             @rmdir($path);
         }
-        return TRUE;
+        return true;
     }
 
     /**
@@ -502,7 +490,6 @@ class Parts extends Body
      * the filenames have been changed from the original
      * to allow them to live comfortably on a generic filesystem
      * use get_parts_array() method to get original filenames
-     *
      */
     public function get_local_file_name_array()
     {
@@ -512,15 +499,15 @@ class Parts extends Body
     //-------- file utilities ---------//
 
     /**
-     *
      * if it doesn't exist already
      * create a writeable directory
      * where we can store stuff
-     *
      */
     public function _make_dir($potential_name = '')
     {
-        if (!is_dir($potential_name)) mkdir($potential_name, 0777);
+        if (! is_dir($potential_name)) {
+            mkdir($potential_name, 0777);
+        }
         return rtrim($potential_name, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
@@ -528,9 +515,9 @@ class Parts extends Body
      * Save messages on local disc, potential
      * name and file lock collision here
      */
-    public function _save_file($filename, $data)
+    public function _save_file($filename, $data): void
     {
-        $fp = fopen($filename, "w+");
+        $fp = fopen($filename, 'w+');
         $wrote = fwrite($fp, $data);
         fclose($fp);
     }

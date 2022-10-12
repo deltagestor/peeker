@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // a basic set of methods that analyze the email object
 // and return boolean values for detectors
 // to implement an email autoresponder
@@ -8,19 +10,17 @@ namespace Deltagestor\Peeker;
 
 class AutoresponderMethods
 {
-
     // create the link between this class and the base layer
     // the class var $that has to be present in every
     // set of methods used to layer and the register
     // function needs to be there too
     // the $that parameter is the email object
-    protected $that = NULL;
+    protected $that = null;
 
-    public function register($that)
+    public function register($that): void
     {
         $this->that = $that;
     }
-
 
     // ------- detectors - return boolean ------- //
 
@@ -41,11 +41,8 @@ class AutoresponderMethods
         $return_path_string = $this->that->get_return_path();
         //p($this->that);
         //p($return_path_string);
-        $bounce = ($return_path_string) === '<>';
-        return $bounce;
-
+        return $return_path_string === '<>';
     }
-
 
     /**
      * return true if email has a from address
@@ -60,16 +57,14 @@ class AutoresponderMethods
         //p($return_path_string);
         // make sure it is a properly-formatted email address
         // and not a <> string indicating terminated bounce
-        $return_path_address_valid = ($from_string !== '<>' and !($this->is_bounce()));
-
-        return $return_path_address_valid;
+        return $from_string !== '<>' and ! $this->is_bounce();
     }
 
     // ---------- callbacks - do something ------------//
     // send an email response
     // determine which email to use if it
     // is not obvious
-    public function send_from($send_from_address = '')
+    public function send_from($send_from_address = ''): void
     {
         $to = $this->that->get_header_item('Return-Path');
         p($to);
@@ -82,6 +77,5 @@ class AutoresponderMethods
             'X-Mailer: Peeker AutoResponder';
         mail($to, $subject, $message, $headers);
     }
-
 }
 //EOF

@@ -1,18 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Deltagestor\Peeker;
 
 /**
- *
  * Manage set of detector-callback circuits
- *
- *
  */
 class DetectorSet
 {
-
     // keep track of what happens
-    public $log_array = array();
+    public $log_array = [];
 
     // we can prepend this string
     // to any function that returns
@@ -22,11 +20,11 @@ class DetectorSet
 
     // "inside the detector loop" switch for controlling detectors
     // default to FALSE, abort_detectors() turns on
-    public $detectors_abort = FALSE;
+    public $detectors_abort = false;
     // holds the detector objects
-    public $detector_array = array();
+    public $detector_array = [];
     // holds the booleans that map to detectors
-    public $detector_trigger_array = array();
+    public $detector_trigger_array = [];
 
     /**
      * Constructor
@@ -34,7 +32,6 @@ class DetectorSet
      */
     public function __construct()
     {
-
         // strlen the inverter string once
         $this->invert_detector_method_string_length = strlen($this->invert_detector_method_string);
 
@@ -46,9 +43,8 @@ class DetectorSet
      * in parallel with the trigger() method
      * for methods that returned TRUE on check()
      * Receive $em_message_object by reference
-     *
      */
-    public function run(&$em_message_obj)
+    public function run(&$em_message_obj): void
     {
         // reset the abort state for detectors
         // so that if we are in a multi-message
@@ -58,7 +54,7 @@ class DetectorSet
         // on a per-message basis so that one
         // detector can bail and tell the rest
         // not to execute
-        $this->detectors_abort(FALSE);
+        $this->detectors_abort(false);
         // NOTE: this design keeps detector checks
         // and callbacks together running in parallel.
         // check the registered detectors to see if the
@@ -66,7 +62,7 @@ class DetectorSet
 
         // run the check() method and record
         // the result for every detector
-        $this->detector_trigger_array = array();
+        $this->detector_trigger_array = [];
         foreach ($this->detector_array as $detector) {
             if ($this->detectors_abort) {
                 $this->log_array[] = 'detectors_abort is TRUE, aborting.';
@@ -77,27 +73,27 @@ class DetectorSet
             // record the result in detector_trigger_array
             $trigger_it = $this->detector_trigger_array[] = $detector->check($em_message_obj);
 
-            $this->log_array[] = (($detector->invert_detector) ? $this->invert_detector_method_string : '') . $detector->detector_method . ' Trigger? ' . var_export($trigger_it, TRUE) . ' args: ' . var_export($detector->detector_method_arguments, TRUE);
+            $this->log_array[] = ($detector->invert_detector ? $this->invert_detector_method_string : '') . $detector->detector_method . ' Trigger? ' . var_export($trigger_it, true) . ' args: ' . var_export($detector->detector_method_arguments, true);
             // run the corresponding callback
             // for every check() that returned TRUE
             if ($trigger_it) {
                 $detector->trigger($em_message_obj);
-                $this->log_array[] = 'triggered callback: ' . $detector->callback_method . ' with: ' . var_export($detector->callback_method_arguments, TRUE);
+                $this->log_array[] = 'triggered callback: ' . $detector->callback_method . ' with: ' . var_export($detector->callback_method_arguments, true);
             }
-
         }
     }
-
 
     /**
      * just run the triggers
      * testing just triggers
      */
-    public function run_triggers(&$em_message_obj)
+    public function run_triggers(&$em_message_obj): void
     {
-        $this->detector_trigger_array = array();
+        $this->detector_trigger_array = [];
         foreach ($this->detector_array as $detector) {
-            if ($this->detectors_abort) break;
+            if ($this->detectors_abort) {
+                break;
+            }
             //p($detector);
             // $em_message_obj is received by reference
             $this->detector_trigger_array[] = $detector->check($em_message_obj);
@@ -110,9 +106,9 @@ class DetectorSet
      * send TRUE to run all callbacks
      * for testing or reporting
      */
-    public function run_callbacks(&$em_message_obj, $all = FALSE)
+    public function run_callbacks(&$em_message_obj, $all = false): void
     {
-        if ($all === FALSE) {
+        if ($all === false) {
             // optimize, remove the FALSE detectors
             $this->detector_trigger_array = array_filter($this->detector_trigger_array);
         }
@@ -126,39 +122,38 @@ class DetectorSet
             // $em_message_obj is received as reference so
             // the functions can operate on the data
             // if detectors aborted in detect phase, don't run callbacks
-            if ($this->detectors_abort) break;
+            if ($this->detectors_abort) {
+                break;
+            }
             $this->detector_array[$key]->trigger($em_message_obj);
         }
     }
-
 
     //------DETECTOR-CALLBACK methods------//
 
     /**
      * add a detector to be checked on every
      * message in message()
-     *
      */
-    public function _add_detector($detector_obj)
+    public function _add_detector($detector_obj): void
     {
         $this->detector_array[] = $detector_obj;
         //p($this->detector_array);
         $this->log_array[] = 'Added detector: ' . $detector_obj->get_detector();
-        $this->log_array[] = 'Detector args: ' . var_export($detector_obj->get_detector_arguments(), TRUE);
+        $this->log_array[] = 'Detector args: ' . var_export($detector_obj->get_detector_arguments(), true);
         $this->log_array[] = 'Added callback: ' . $detector_obj->get_callback();
-        $this->log_array[] = 'Callback args: ' . var_export($detector_obj->get_callback_arguments(), TRUE);
+        $this->log_array[] = 'Callback args: ' . var_export($detector_obj->get_callback_arguments(), true);
     }
 
     /**
      * wrapper to add a detector
      * also, turns on detector checking
-     *
      */
     public function detector($dm, $dma, $cm, $cma)
     {
         $detector = new Detector($dm, $dma, $cm, $cma, $this);
         $this->_add_detector($detector);
-        $this->set_detectors_state(TRUE);
+        $this->set_detectors_state(true);
         return $detector;
     }
 
@@ -170,7 +165,6 @@ class DetectorSet
      * just like for detector() method
      * should fix this so that it doesn't use
      * ttrue() method
-     *
      */
     public function detect_phase($dm, $dma = '')
     {
@@ -186,20 +180,17 @@ class DetectorSet
      * just like for detector() method
      * should fix this so that it doesn't use
      * ttrue() method
-     *
      */
     public function callback_phase($cm, $cma = '')
     {
         return $this->detector('ttrue', '', $cm, $cma);
     }
 
-
     /**
      * turn on/off detectors "globally"
      * but keep them around
-     *
      */
-    public function set_detectors_state($state)
+    public function set_detectors_state($state): void
     {
         $this->detectors_on = $state;
     }
@@ -208,9 +199,9 @@ class DetectorSet
      * abort the detector loop (do not trigger or check)
      * in messages() method
      */
-    public function detectors_abort($state)
+    public function detectors_abort($state): void
     {
-        $this->log_array[] = 'Setting detectors abort state: ' . var_export($state, TRUE);
+        $this->log_array[] = 'Setting detectors abort state: ' . var_export($state, true);
         $this->detectors_abort = $state;
     }
 
@@ -225,7 +216,7 @@ class DetectorSet
     /**
      * settor method: set the state array
      */
-    public function set_log_array($in)
+    public function set_log_array($in): void
     {
         $this->log_array = $in;
     }
@@ -237,13 +228,11 @@ class DetectorSet
      * do something special (e.g., abort the
      * detector loop) if any arbitrary detector
      * returns true - check right after in detector stack
-     *
      */
     public function _get_previous_detector_state()
     {
         return end($this->detector_trigger_array);
     }
-
 }
 
 //EOF

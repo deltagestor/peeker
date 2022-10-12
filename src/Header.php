@@ -1,7 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- *
  * Makes email headers into objects
  * so they can be acted on by other classes
  * access data, execute detectors, etc...
@@ -13,17 +14,15 @@
  * can manipulate messages on the mail server
  *
  * with OO design, other methods can be added
- *
- *
  */
 
-// the super class, provides method 
+// the super class, provides method
 // layering if needed for plugins
+
 namespace Deltagestor\Peeker;
 
 class Header extends Layers
 {
-
     // the spawning parent
     public $peek_parent;
     // the resource - used to manipulate messages
@@ -88,27 +87,26 @@ class Header extends Layers
     // a "good enough" fingerprint to id dupes
     // also use this unique fingerprint to
     // create a directory for saving attachments
-    public $fingerprint_sources = array('fromaddress', 'toaddress', 'subject', 'date');
+    public $fingerprint_sources = ['fromaddress', 'toaddress', 'subject', 'date'];
     // md5 hash of sources data points
     public $fingerprint = '';
 
     // if marked for delete
     // test this var before calling imap_ fns
-    public $mark_delete = FALSE;
+    public $mark_delete = false;
 
     // store errors with names of imap functions for keys
     public $error_array;
 
     /**
      * Constructor
-     *
      */
     public function __construct(&$peek_parent, $imap_h_obj)
     {
         // host the connection to the IMAP server
         // and allow these classes to target functions
         // in the wrapper classes: peek and connect
-        $this->peek_parent =& $peek_parent;
+        $this->peek_parent = & $peek_parent;
 
         // handle the stdClass $imap_h_obj
         // populating builtin vars
@@ -135,19 +133,18 @@ class Header extends Layers
     *
     */
 
-    public function _set_class_vars($obj)
+    public function _set_class_vars($obj): void
     {
-        $class = get_class($this);
+        $class = static::class;
         $class_vars = get_class_vars($class);
 
-        // check that each of the passed parameters 
+        // check that each of the passed parameters
         // are valid before setting the class variable
         foreach ($obj as $var => $value) {
             if (array_key_exists($var, $class_vars)) {
                 $this->$var = $value;
-            } else {
-                //log_message('DEBUG','setClassVars: class var "'.$var.'" not in class "' .$class.'"');
             }
+            //log_message('DEBUG','setClassVars: class var "'.$var.'" not in class "' .$class.'"');
         }
     }
 
@@ -161,7 +158,7 @@ class Header extends Layers
      * applying any decoding
      * could "salt" this...
      */
-    public function _generate_email_fingerprint()
+    public function _generate_email_fingerprint(): void
     {
         foreach ($this->fingerprint_sources as $prop) {
             $this->fingerprint .= $this->$prop;
@@ -169,22 +166,20 @@ class Header extends Layers
         $this->fingerprint = md5($this->fingerprint);
     }
 
-
     /**
      * run the error handler and store the error array
      * inside this object
-     *
      */
-    public function _check_imap_errors($func)
+    public function _check_imap_errors($func): void
     {
         $err = imap_errors();
-        if ($err !== FALSE) $this->error_array[$func] = $err;
+        if ($err !== false) {
+            $this->error_array[$func] = $err;
+        }
     }
-
 
     /**
      * Get the fingerprint hash
-     *
      */
     public function get_fingerprint()
     {
@@ -200,7 +195,6 @@ class Header extends Layers
         return $this->date;
     }
 
-
     /**
      * Get the subject
      * Subject is sometimes encoded
@@ -212,7 +206,6 @@ class Header extends Layers
 
     /**
      * Get the temp message id assigned by the mail server
-     *
      */
     public function get_msgno()
     {
@@ -221,7 +214,6 @@ class Header extends Layers
 
     /**
      * Get the message id
-     *
      */
     public function get_message_id()
     {
@@ -231,7 +223,6 @@ class Header extends Layers
     /**
      * these Accessor functions return the string
      * which may contain multiple addresses in string
-     *
      */
     public function get_to()
     {
@@ -282,49 +273,47 @@ class Header extends Layers
         if (isset($this->$type)) {
             $data = $this->$type;
         } else {
-            return FALSE;
+            return false;
         }
         // something there, decode it
-        $data = $this->peek_parent->decode_mime($data);
-        return $data;
+        return $this->peek_parent->decode_mime($data);
     }
 
     /**
      * these Accessor functions return the array
      * which may contain multiple addresses as items
-     *
      */
-    public function get_to_array($format = NULL)
+    public function get_to_array($format = null)
     {
         return $this->_get_address_array('to', $format);
     }
 
-    public function get_from_array($format = NULL)
+    public function get_from_array($format = null)
     {
         return $this->_get_address_array('from', $format);
     }
 
-    public function get_reply_to_array($format = NULL)
+    public function get_reply_to_array($format = null)
     {
         return $this->_get_address_array('reply_to', $format);
     }
 
-    public function get_sender_array($format = NULL)
+    public function get_sender_array($format = null)
     {
         return $this->_get_address_array('sender', $format);
     }
 
-    public function get_cc_array($format = NULL)
+    public function get_cc_array($format = null)
     {
         return $this->_get_address_array('cc', $format);
     }
 
-    public function get_bcc_array($format = NULL)
+    public function get_bcc_array($format = null)
     {
         return $this->_get_address_array('bcc', $format);
     }
 
-    public function get_return_path_array($format = NULL)
+    public function get_return_path_array($format = null)
     {
         return $this->_get_address_array('return_path', $format);
     }
@@ -338,7 +327,7 @@ class Header extends Layers
      */
     public function _get_address_array($in_type, $format)
     {
-        $address_array = array();
+        $address_array = [];
         $type = strtolower($in_type);
         if (isset($this->$type)) {
             $address_array = $this->$type;
@@ -346,25 +335,25 @@ class Header extends Layers
             return $address_array; // empty array
         }
 
-        $addr_part_names = array('personal', 'mailbox', 'host');
+        $addr_part_names = ['personal', 'mailbox', 'host'];
 
         // something's there, decode each array item
         foreach ($address_array as $key => $item) {
             // decode each address part - probably overkill
             foreach ($addr_part_names as $addr_part) {
-                if (isset ($item->$addr_part)) {
+                if (isset($item->$addr_part)) {
                     // stuff it back into the array
                     $address_array[$key]->$addr_part = $this->peek_parent->decode_mime($item->$addr_part);
                 }
             }
             //p($address_array);
             // replace the format strings with the properties
-            if ($format !== NULL) {
-                $formatted = str_replace($addr_part_names, array('$item->personal', '$item->mailbox', '$item->host'), $format);
+            if ($format !== null) {
+                $formatted = str_replace($addr_part_names, ['$item->personal', '$item->mailbox', '$item->host'], $format);
                 // ugly eval lets us do formatting
                 // trick without double-replacing (ie str_replace in a loop)
                 // suppress errors from missing addr_part
-                @eval("\$evaled = \"$formatted\";");
+                @eval("\$evaled = \"{$formatted}\";");
                 $address_array[$key] = $evaled;
             }
         }
@@ -379,7 +368,6 @@ class Header extends Layers
     {
         return $this->Size;
     }
-
 
     /**
      * Get the unix timestamp on the message
@@ -419,7 +407,6 @@ class Header extends Layers
         return $this->header_array;
     }
 
-
     /**
      * A generic header getter.
      * Get one item from the header_array
@@ -430,7 +417,7 @@ class Header extends Layers
      */
     public function get_header_item($header_key)
     {
-        $h = FALSE;
+        $h = false;
         if (isset($this->header_array[$header_key])) {
             $h = $this->header_array[$header_key];
         } else {
@@ -452,7 +439,6 @@ class Header extends Layers
 
     /**
      * Return mark_delete
-     *
      */
     public function get_mark_delete()
     {
@@ -461,7 +447,6 @@ class Header extends Layers
 
     /**
      * Mark this object as deleted
-     *
      */
     public function set_mark_delete($delete)
     {
@@ -469,15 +454,13 @@ class Header extends Layers
         return $this->mark_delete;
     }
 
-
     /*------Wrappers--------*/
 
     /**
      * wrapper to pipe the detectors_abort
      * message to the peek_parent
-     *
      */
-    public function detectors_abort($state = TRUE)
+    public function detectors_abort($state = true): void
     {
         $this->peek_parent->detectors_abort($state);
     }
@@ -486,30 +469,26 @@ class Header extends Layers
      * abort, do action array items if called for
      * right now only delete is possible
      */
-    public function abort($action_array = FALSE)
+    public function abort($action_array = false): void
     {
-        $del = FALSE;
-        if (isset($action_array['delete']) && $action_array['delete'] === TRUE) {
-            $del = $this->set_mark_delete(TRUE);
+        $del = false;
+        if (isset($action_array['delete']) && $action_array['delete'] === true) {
+            $del = $this->set_mark_delete(true);
         }
-        $this->detectors_abort(TRUE);
-        $this->log_state('&raquo; ABORTING detectors #' . $this->Msgno . ' Delete? :' . strtoupper(var_export($del, TRUE)));
+        $this->detectors_abort(true);
+        $this->log_state('&raquo; ABORTING detectors #' . $this->Msgno . ' Delete? :' . strtoupper(var_export($del, true)));
     }
-
 
     /**
      * if most recent detector fired TRUE make all the
      * other detectors abort, pass action_array argument
-     *
-     *
      */
-    public function abort_if_previous($action_array = FALSE)
+    public function abort_if_previous($action_array = false): void
     {
         if ($this->peek_parent->_get_previous_detector_state()) {
             $this->abort($action_array);
         }
     }
-
 
     // ------- detectors - return boolean ------- //
 
@@ -519,7 +498,7 @@ class Header extends Layers
      */
     public function ttrue($arg)
     {
-        return TRUE;
+        return true;
     }
 
     /**
@@ -528,7 +507,7 @@ class Header extends Layers
      */
     public function ffalse($arg)
     {
-        return FALSE;
+        return false;
     }
 
     /**
@@ -542,11 +521,10 @@ class Header extends Layers
 
     /**
      * true if Msgno property is equal to arg
-     *
      */
     public function is_msgno($msgno)
     {
-        return $this->Msgno == $msgno;
+        return $this->Msgno === $msgno;
     }
 
     /**
@@ -555,8 +533,8 @@ class Header extends Layers
      */
     public function preg_match_field($arr)
     {
-        list($field, $pattern) = $arr;
-        return (bool)preg_match($pattern, $this->$field);
+        [$field, $pattern] = $arr;
+        return (bool) preg_match($pattern, $this->$field);
     }
 
     /**
@@ -576,26 +554,24 @@ class Header extends Layers
      */
     public function preg_match_header_array_key($array)
     {
-        list($key, $pattern) = $array;
+        [$key, $pattern] = $array;
         if ($this->isset_header_array_key($key)) {
-            return (bool)preg_match($pattern, implode(' ', (array)$this->header_array[$key]));
-        } else {
-            return FALSE;
+            return (bool) preg_match($pattern, implode(' ', (array) $this->header_array[$key]));
         }
+        return false;
     }
-
 
     /**
      * true if header property is empty
-     *
      */
     public function empty_property($property)
     {
         $e = empty($this->$property);
-        if ($e) $this->log_state('EMPTY ' . $property . ' in msg #' . $this->Msgno);
+        if ($e) {
+            $this->log_state('EMPTY ' . $property . ' in msg #' . $this->Msgno);
+        }
         return $e;
     }
-
 
     /**
      * true if undecoded fromaddress has a given string in it
@@ -603,7 +579,7 @@ class Header extends Layers
      */
     public function in_from($from_str)
     {
-        return strpos(strtolower($this->fromaddress), strtolower($from_str)) !== FALSE;
+        return strpos(strtolower($this->fromaddress), strtolower($from_str)) !== false;
     }
 
     /**
@@ -612,10 +588,8 @@ class Header extends Layers
      */
     public function in_to($to_str)
     {
-        return strpos(strtolower($this->toaddress), strtolower($to_str)) !== FALSE;
+        return strpos(strtolower($this->toaddress), strtolower($to_str)) !== false;
     }
-
-
 
     //--------- callbacks ----------//
 
@@ -627,14 +601,16 @@ class Header extends Layers
      * optional parameter lets detectors abort
      * on this delete as well
      */
-    public function set_delete($abort = FALSE)
+    public function set_delete($abort = false): void
     {
         if ($this->Msgno > 0) {
             $this->log_state('Mark DELETE #' . $this->Msgno);
-            $this->set_mark_delete(TRUE);
+            $this->set_mark_delete(true);
             imap_delete($this->peek_parent->resource, $this->Msgno);
             // pass the action_array with delete as FALSE
-            if ($abort) $this->abort(array('delete' => FALSE));
+            if ($abort) {
+                $this->abort(['delete' => false]);
+            }
         } else {
             $this->log_state('Cannot DELETE zero or negative #' . $this->Msgno);
         }
@@ -645,9 +621,9 @@ class Header extends Layers
      * allows removing messages from
      * the delete state
      */
-    public function undelete()
+    public function undelete(): void
     {
-        $this->set_mark_delete(FALSE);
+        $this->set_mark_delete(false);
         imap_undelete($this->peek_parent->resource, $this->Msgno);
         $this->log_state('Undeleted message #' . $this->Msgno);
     }
@@ -657,16 +633,15 @@ class Header extends Layers
      * flag seen, then move message to another mailbox
      * helps us remember to flag, then move
      */
-    public function flag_seen()
+    public function flag_seen(): void
     {
         $this->flag_mail('\Seen');
     }
 
     /**
      * move a message to another mailbox
-     *
      */
-    public function move_mail($mailbox_name)
+    public function move_mail($mailbox_name): void
     {
         $this->peek_parent->move_mail($this->Msgno, $mailbox_name);
         $this->log_state('Moved message #' . $this->Msgno . ' to ' . $mailbox_name);
@@ -677,7 +652,7 @@ class Header extends Layers
      * flag seen, then move message to another mailbox
      * helps us remember to flag, then move
      */
-    public function flag_seen_move_mail($mailbox_name)
+    public function flag_seen_move_mail($mailbox_name): void
     {
         $this->flag_seen();
         $this->move_mail($mailbox_name);
@@ -692,23 +667,25 @@ class Header extends Layers
      * Default to TRUE flag_state, set FALSE
      * to remove the flag
      */
-    public function flag_mail($flag_string, $flag_state = TRUE)
+    public function flag_mail($flag_string, $flag_state = true): void
     {
         $this->peek_parent->flag_mail($this->Msgno, $flag_string, $flag_state);
-        $this->log_state('Flagged message #' . $this->Msgno . ' as ' . $flag_string . (string)$flag_state);
+        $this->log_state('Flagged message #' . $this->Msgno . ' as ' . $flag_string . (string) $flag_state);
     }
-
 
     /**
      * display utility
      * removes peek_parent property
-     *
      */
-    public function _print($d = NULL)
+    public function _print($d = null): void
     {
-        if ($d === NULL) $d = $this;
+        if ($d === null) {
+            $d = $this;
+        }
         // don't display the peek parent property
-        if (isset($d->peek_parent)) unset($d->peek_parent);
+        if (isset($d->peek_parent)) {
+            unset($d->peek_parent);
+        }
         echo '<pre>';
         print_r($d);
         echo '</pre>';
@@ -716,9 +693,8 @@ class Header extends Layers
 
     /**
      * print the argument
-     *
      */
-    public function pr($data)
+    public function pr($data): void
     {
         $this->_print('PRINT: ' . $data . ' in message #' . $this->Msgno);
     }
@@ -728,30 +704,27 @@ class Header extends Layers
      * assumes the property name
      * has an accessor function
      */
-    public function print_field($fn, $use_html_entities = TRUE)
+    public function print_field($fn, $use_html_entities = true): void
     {
         $func = 'get_' . $fn;
-        $data = ($use_html_entities) ? htmlentities($this->$func()) : $this->$func();
+        $data = $use_html_entities ? htmlentities($this->$func()) : $this->$func();
         $this->_print('PRINT field: ' . $fn . ' in message #' . $this->Msgno . ' : ' . $data);
     }
 
     /**
      * print the array
      * and optional nested sub-item
-     *
      */
-    public function print_array($arr)
+    public function print_array($arr): void
     {
-        list($fn, $sub_fn) = $arr;
+        [$fn, $sub_fn] = $arr;
         $func = 'get_' . $fn;
         $data = $this->$func();
-        $data = ($sub_fn !== '') ? $data[$sub_fn] : $data;
+        $data = $sub_fn !== '' ? $data[$sub_fn] : $data;
         $this->_print('Message #' . $this->Msgno . ' ' . $fn . '...');
         echo '<hr>';
         $this->_print($data);
-
     }
-
 
     /**
      * prepend a string to the subject
@@ -759,19 +732,17 @@ class Header extends Layers
      * before storing or re-sending
      * only prepend if there is no string
      * already in the subject
-     *
      */
-    public function prepend_subject($prepend_string)
+    public function prepend_subject($prepend_string): void
     {
         $subj = $this->get_subject();
-        if (strpos($subj, $prepend_string) === FALSE) {
+        if (strpos($subj, $prepend_string) === false) {
             $this->subject = $prepend_string . $subj;
             $this->log_state('Subject prepended to message #' . $this->Msgno . ': ' . $prepend_string);
         } else {
             $this->log_state('Subject for message #' . $this->Msgno . ' already prepended: ' . $prepend_string);
         }
     }
-
 
     /* ------ Wrappers to talk to peek_parent ------ */
 
@@ -781,7 +752,6 @@ class Header extends Layers
      * allows access to the parent
      * from the message class while
      * inside the detector loop
-     *
      */
     public function message_count()
     {
@@ -793,9 +763,8 @@ class Header extends Layers
      * up to the parent class, allows it
      * to be used inside a message acquisition
      * loop
-     *
      */
-    public function log_state($str)
+    public function log_state($str): void
     {
         $this->peek_parent->log_state($str);
     }
@@ -805,9 +774,8 @@ class Header extends Layers
      * up to the parent class, allows it
      * to be used by an individual email or
      * inside a message acquisition loop
-     *
      */
-    public function expunge()
+    public function expunge(): void
     {
         $this->peek_parent->expunge();
     }
